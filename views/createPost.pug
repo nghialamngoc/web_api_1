@@ -1,0 +1,24 @@
+extends ./layout/common.pug
+
+block content
+    h1 Create
+
+    if errors
+        each error in errors
+            .alert.alert-danger=error
+
+    form(action="/post/createnewpost", method="POST")
+        .form-group
+            label(for="title") Title : 
+            input#title.form-control(type="text" name="title" value= values ? values.name : "")
+        .form-group
+            label(for="subject") Subject : 
+            input#subject.form-control(type="text" name="subject" value=values ? values.phone : "")
+        .form-group
+            label(for="content") Content : 
+            input#content.form-control(type="text" name="content" value=values ? values.phone : "")
+        .form-group
+            label(for="status") Status : 
+            input#status.form-control(type="text" name="status" value=values ? values.phone : "")
+        
+        button Submit
