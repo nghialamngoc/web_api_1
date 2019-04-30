@@ -1,25 +1,33 @@
-var mongoose = require('mongoose');
-const Post = require('../../models/post.model');
+const mongoose = require('mongoose');
+const Post = require('../models/post.model');
 
 module.exports = {
 
-	getPosts: function (req, res) {
-		Post.find({}).select({
-			views: 0
-		}).exec((err, data) => {
-			if (err) {
-				return res.json({
-					result: "failed",
-					data: {},
-					message: `Error is ${err}`
-				})
-			}
-			return res.json({
-				result: "success",
-				data,
-				message: `Get posts successfully`
+	getPosts: function (req, res, next) {
+		Post.find().select({ __v: 0 })
+			.then(data => {
+				const respone = {
+					count: data.length,
+					data: data.map(data => {
+						return {
+							title: data.title,
+							content: data.content,
+							subject: data.subject,
+							createDate: data.createDate,
+							request:{
+								type: 'GET',
+								url: 'http://localhost:8000/post/' + data._id
+							}
+						}
+					})
+				}		
+				res.status(200).json(respone);						
+			})
+			.catch(err => {
+				 res.status(500).json({
+						message: `Error is ${err}`
+					})				
 			});
-		});
 	},
 
 	findOnePostsWithCriteria: function(req, res){
@@ -35,7 +43,7 @@ module.exports = {
 				if(data)
 					return res.json(data);
 				res.json({
-					message: "Not found"
+					message: 'Not found'
 				})
 			})
 			.catch(err => {
@@ -44,20 +52,28 @@ module.exports = {
 	},
 
 	getPostsById: function (req, res) {
-		Post.findById(mongoose.Types.ObjectId(req.query.post_id)).exec((err, data) => {
-			if (err) {
-				return res.json({
-					result: "failed",
-					data: {},
-					message: `Error is ${err}`
-				})
-			}
-			return res.json({
-				result: "success",
-				data,
-				message: `Insert new Post successfully`
-			});
-		})
+		let postId = req.params.postId;
+		if(!mongoose.Types.ObjectId.isValid(postId))
+			return res.status(500).json({
+				message: 'Something not correct'
+			})
+		Post.findById({ _id: mongoose.Types.ObjectId(postId)})		
+			.then(data => {				
+				const result = {
+					title: data.title,
+					content: data.content,
+					subject: data.subject,
+					createDate: data.createDate,
+					request: {
+						type: 'GET',
+						url: 'http://localhost:8000/post/' + data._id
+					}
+				}				
+				res.status(200).json(result)
+			})
+			.catch(err => {
+				res.status(500).json(err)
+			});		
 	},
 
 	findPostsWithCriteria: function (req, res) {
@@ -68,13 +84,13 @@ module.exports = {
 		Post.find(findCriteria).exec((err, data) => {
 			if (err) {
 				return res.json({
-					result: "failed",
+					result: 'failed',
 					data: {},
 					message: `Error is ${err}`
 				})
 			}
 			return res.json({
-				result: "success",
+				result: 'success',
 				data,
 				message: `success`
 			})
@@ -84,71 +100,83 @@ module.exports = {
 	postCreateNewPost: function (req, res) {
 	
 		let newPost = new Post({
+			_id: mongoose.Types.ObjectId(),
 			title: req.body.title,
 			subject: req.body.subject,
-			content: req.body.content,
-			status: req.body.status
+			createDate: req.body.createDate,
+			content: req.body.content
 		})
 
 		newPost.save()
-			.then(data => {
-				if (!data || data.length === 0)
-					return res.status(500).json(data)
-				res.status(201).json(data)
+			.then(() => {
+				res.status(201).json({
+					message: 'Create new post successfully',
+					newPost: {
+						title: newPost.title,
+						content: newPost.content,
+						subject: newPost.subject,
+						createDate: newPost.createDate,
+						request:{
+							type: 'POST',
+							url: 'http://localhost:8000/post/' + newPost._id
+						}
+					}
+				})
 			})
 			.catch(err => {
 				res.status(500).json(err)
 			})							
 	},
 
-	updatePost: function (req, res) {
-		var criteria = {}
-		if (mongoose.Types.ObjectId.isValid(req.body.post_id)) {
-			criteria = {
-				_id: mongoose.Types.ObjectId(req.body.post_id)
-			}
-			var newValue = {
-				title: req.body.title,
-				subject: req.body.subject,
-				content: req.body.content,
-				status: req.body.status
-			}
+	//UPDATE
+	updatePostWithPath: function(req, res){
+		let post_id = req.body.post_id;
 
-			Post.findOneAndUpdate(criteria, newValue, { new: true})
-				.then( data => {
-					res.json(data);
+		if(!mongoose.Types.ObjectId.isValid(post_id))
+			return res.status(500).json({
+				message: 'Something not correct!'
+			})
+		Post.updateOne({ _id: mongoose.Types.ObjectId(post_id)}, req.body)
+			.then(() => {
+				res.status(200).json({
+					titleUpdate: req.body.title,
+					contentUpdate: req.body.content,
+					subjectUpdate: req.body.subject,
+					createDateUpdate: req.body.createDate,
+					request:{
+						type: 'PATCH',
+						url: 'http://localhost:8000/post/' + req.body._id
+					}
 				})
-				.catch( err => {
-					res.json(err);
-				}) 
-		}
-		else
-			res.status(400).json({
-				message: 'Post id is not correct'
+			})
+			.catch(err => {
+				res.status(500).json({
+					message: err
+				})
 			})
 	},
 
-
 	//DELETE
-
 	deletePost : function(req, res){
 		let criteria = {}
 		if(mongoose.Types.ObjectId.isValid(req.body.post_id)){
 			criteria._id = mongoose.Types.ObjectId(req.body.post_id);
 
-			Post.findOneAndRemove(criteria)
-				.then( data => {
+			Post.remove(criteria)
+				.then( () => {
 					res.json({
-						removeData: data
+						message: "Delete post successfully"
 					});
 				})
 				.catch( err => {
-					res.status(500).json(err)
+					res.status(500).json({
+						message: err
+					})
 				})
 		}
 		else
 			res.status(400).json({
-				message: "Your Post's id is not correct"
+				message: 'Not valid for your provider id'
 			})
 	}
 }
