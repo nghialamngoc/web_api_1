@@ -25,12 +25,8 @@ const postSchema = new mongoose.Schema({
         }],
         default: ['disable']
     },
-    tags: {
-        type: Array
-    },
-    views: {
-        type: Number,
-        default: 0
+    postImages: {
+        type: String,
     }
 })
 

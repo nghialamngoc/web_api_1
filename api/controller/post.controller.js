@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+
 const Post = require('../models/post.model');
 
 module.exports = {
@@ -14,6 +15,7 @@ module.exports = {
 							content: data.content,
 							subject: data.subject,
 							createDate: data.createDate,
+							postImages: data.postImages,
 							request:{
 								type: 'GET',
 								url: 'http://localhost:8000/post/' + data._id
@@ -57,7 +59,7 @@ module.exports = {
 			return res.status(500).json({
 				message: 'Something not correct'
 			})
-		Post.findById({ _id: mongoose.Types.ObjectId(postId)})		
+		Post.findById({ _id: mongoose.Types.ObjectId(postId)}).select({ __v: 0 })		
 			.then(data => {				
 				const result = {
 					title: data.title,
@@ -98,13 +100,14 @@ module.exports = {
 	},
 
 	postCreateNewPost: function (req, res) {
-	
+		console.log(req.file);
 		let newPost = new Post({
 			_id: mongoose.Types.ObjectId(),
 			title: req.body.title,
 			subject: req.body.subject,
 			createDate: req.body.createDate,
-			content: req.body.content
+			content: req.body.content,
+			postImages: 'uploads/' + req.file.filename
 		})
 
 		newPost.save()
