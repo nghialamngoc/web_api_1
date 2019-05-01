@@ -4,7 +4,8 @@ const bodyParser = require('body-parser');
 const morgan = require('morgan');
 
 // import Route
-const postRoute = require('./api/routes/post.route')
+const postRoute = require('./api/routes/post.route');
+const userRoute = require('./api/routes/user.route');
 
 //mogodb connection string
 let mongodbConnectionString = 
@@ -48,6 +49,7 @@ app.use((req, res, next) => {
 })
 
 app.use('/post', postRoute);
+app.use('/user', userRoute);
 
 //Handler for 404 - resource not found
 app.use((req, res, next) => {

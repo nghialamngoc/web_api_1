@@ -1,6 +1,8 @@
 var express = require('express');
 const multer = require('multer');
+const checkAuth = require('../middleware/check-auth');
 var postController = require('../controller/post.controller');
+
 
 const storage = multer.diskStorage({
 	destination: function(req, file, cb){
@@ -35,13 +37,11 @@ route.get('/', postController.getPosts);
 route.get('/:postId', postController.getPostsById);
 route.get('/find_with_criteria', postController.findPostsWithCriteria);
 route.get('/find_one_with_criteria', postController.findOnePostsWithCriteria);
-route.get('/error', (req, res, next) => {
-	throw new Error('This is a forced Error');
-})
 
-route.post('/create', upload.single('postImage') , postController.postCreateNewPost);
-route.patch('/update', postController.updatePostWithPath);
+route.post('/create', checkAuth, upload.single('postImage'), postController.postCreateNewPost);
 
-route.delete('/delete', postController.deletePost);
+route.patch('/update', checkAuth, postController.updatePostWithPath);
+
+route.delete('/delete/:postId', checkAuth, postController.deletePost);
 
 module.exports = route;

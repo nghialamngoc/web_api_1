@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 
+//Model
 const Post = require('../models/post.model');
 
 module.exports = {
@@ -99,6 +100,7 @@ module.exports = {
 		});
 	},
 
+	//POST
 	postCreateNewPost: function (req, res) {
 		console.log(req.file);
 		let newPost = new Post({
@@ -162,8 +164,8 @@ module.exports = {
 	//DELETE
 	deletePost : function(req, res){
 		let criteria = {}
-		if(mongoose.Types.ObjectId.isValid(req.body.post_id)){
-			criteria._id = mongoose.Types.ObjectId(req.body.post_id);
+		if(mongoose.Types.ObjectId.isValid(req.params.post_id)){
+			criteria._id = mongoose.Types.ObjectId(req.params.post_id);
 
 			Post.remove(criteria)
 				.then( () => {
