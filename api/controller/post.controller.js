@@ -12,11 +12,13 @@ module.exports = {
 					count: data.length,
 					data: data.map(data => {
 						return {
+							_id: data._id,
 							title: data.title,
 							content: data.content,
-							subject: data.subject,
+							shortDescription: data.shortDescription,
 							createDate: data.createDate,
 							postImages: data.postImages,
+							tags: data.tags,
 							request:{
 								type: 'GET',
 								url: 'http://localhost:8000/post/' + data._id
@@ -33,83 +35,71 @@ module.exports = {
 			});
 	},
 
-	findOnePostsWithCriteria: function(req, res){
-
-		if(!req.query.title)
-			return res.status(400).send('Missing URL parameter Title');
-
-		findCriteria = {
-			title: new RegExp( req.query.title ,'i')
-		} 
-		Post.findOne(findCriteria)
-			.then( data => {
-				if(data)
-					return res.json(data);
-				res.json({
-					message: 'Not found'
+	searchParam: function (req, res) {
+		
+		let searchParam = req.params.searchParam;
+		console.log(searchParam)
+		if(mongoose.Types.ObjectId.isValid(searchParam))		
+			Post.findById({ _id: mongoose.Types.ObjectId(searchParam)}).select({ __v: 0 })		
+				.then(data => {				
+					const result = {
+						count: data.length,
+						title: data.title,
+						content: data.content,
+						shortDescription: data.shortDescription,
+						createDate: data.createDate,
+						request: {
+							type: 'GET',
+							url: 'http://localhost:8000/post/' + data._id
+						}
+					}				
+					res.status(200).json(result)
 				})
-			})
-			.catch(err => {
-				res.json(err)
-			})
-	},
-
-	getPostsById: function (req, res) {
-		let postId = req.params.postId;
-		if(!mongoose.Types.ObjectId.isValid(postId))
-			return res.status(500).json({
-				message: 'Something not correct'
-			})
-		Post.findById({ _id: mongoose.Types.ObjectId(postId)}).select({ __v: 0 })		
-			.then(data => {				
-				const result = {
-					title: data.title,
-					content: data.content,
-					subject: data.subject,
-					createDate: data.createDate,
-					request: {
-						type: 'GET',
-						url: 'http://localhost:8000/post/' + data._id
-					}
-				}				
-				res.status(200).json(result)
-			})
-			.catch(err => {
-				res.status(500).json(err)
-			});		
-	},
-
-	findPostsWithCriteria: function (req, res) {
-		var findCriteria = {
-			title: new RegExp(req.query.title, 'i')
-		};
-
-		Post.find(findCriteria).exec((err, data) => {
-			if (err) {
-				return res.json({
-					result: 'failed',
-					data: {},
-					message: `Error is ${err}`
+				.catch(err => {
+					res.status(500).json({
+						message: err
+					})
+				});		
+		else 
+			Post.find({ tags: searchParam}).select({ __v: 0 })		
+				.then(data => {				
+					const respone = {
+						count: data.length,
+						data: data.map(data => {
+							return {
+								_id: data._id,
+								title: data.title,
+								content: data.content,
+								shortDescription: data.shortDescription,
+								createDate: data.createDate,
+								postImages: data.postImages,
+								tags: data.tags,
+								request:{
+									type: 'GET',
+									url: 'http://localhost:8000/post/' + data._id
+								}
+							}
+						})
+					}		
+					res.status(200).json(respone);
 				})
-			}
-			return res.json({
-				result: 'success',
-				data,
-				message: `success`
-			})
-		});
+				.catch(err => {
+					res.status(500).json({
+						message: err
+					})
+				});						
 	},
 
 	//POST
 	postCreateNewPost: function (req, res) {
-		console.log(req.file);
 		let newPost = new Post({
 			_id: mongoose.Types.ObjectId(),
 			title: req.body.title,
-			subject: req.body.subject,
+			shortDescription: req.body.shortDescription,
 			createDate: req.body.createDate,
 			content: req.body.content,
-			postImages: 'uploads/' + req.file.filename
+			tags: req.body.tags.split(','),
+			postImages: req.file ? 'uploads/' + req.file.filename : ''
 		})
 
 		newPost.save()
@@ -119,8 +109,9 @@ module.exports = {
 					newPost: {
 						title: newPost.title,
 						content: newPost.content,
-						subject: newPost.subject,
+						shortDescription: newPost.shortDescription,
 						createDate: newPost.createDate,
+						tags: newPost.tags,
 						request:{
 							type: 'POST',
 							url: 'http://localhost:8000/post/' + newPost._id
@@ -146,7 +137,7 @@ module.exports = {
 				res.status(200).json({
 					titleUpdate: req.body.title,
 					contentUpdate: req.body.content,
-					subjectUpdate: req.body.subject,
+					shortDescriptionUpdate: req.body.shortDescription,
 					createDateUpdate: req.body.createDate,
 					request:{
 						type: 'PATCH',

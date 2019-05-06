@@ -34,9 +34,7 @@ const upload = multer({
 var route = express.Router();
 
 route.get('/', postController.getPosts);
-route.get('/:postId', postController.getPostsById);
-route.get('/find_with_criteria', postController.findPostsWithCriteria);
-route.get('/find_one_with_criteria', postController.findOnePostsWithCriteria);
+route.get('/:searchParam', postController.searchParam);
 
 route.post('/create', checkAuth, upload.single('postImage'), postController.postCreateNewPost);
 

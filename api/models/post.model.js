@@ -6,17 +6,17 @@ const postSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    subject: {
-        type: String,
+    shortDescription: {
+        type: String,   
         required: true
+    },    
+    content: {
+        type: String,
+        default: ""
     },
     createDate: {
         type: Date,
         default: Date.now
-    },
-    content: {
-        type: String,
-        default: ""
     },
     status: {
         type: [{
@@ -25,8 +25,10 @@ const postSchema = new mongoose.Schema({
         }],
         default: ['disable']
     },
-    postImages: {
-        type: String,
+    tags: {
+        type:[{
+            type: String
+        }]
     }
 })
 
